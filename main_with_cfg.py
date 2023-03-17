@@ -47,7 +47,8 @@ while state:
         response = ping(ips[i][0])  # Проверяем, есть ли пинг до ресурса
         if isinstance(response, float) and ips[i][1] == 1:  # Если хост до этого не пинговался и ожил:
             try:
-                bot.send_message(chat_id, f'Связь с хостом {i} восстановилась')  # Пишем в телегу
+                if config['tlgrm']['enabled'] == '1':
+                    bot.send_message(chat_id, f'Связь с хостом {i} восстановилась')  # Пишем в телегу
             except:
                 print('Не удается отправить сообщение в Telegram')
             append_log(f'{datetime.now()}: Связь с хостом {i} восстановилась', config['other']['log_file'])  # Лог
@@ -59,9 +60,12 @@ while state:
                 if response3 is None or response3 is False:  # Если и в 3 раз не ответил:
                     ips[i][1] = 1  # Добавляем признак отвала хоста
                     try:
-                        bot.send_message(chat_id, f'Связь с хостом {i} пропала')  # Пишем в телегу
+                        if config['tlgrm']['enabled'] == '1':
+                            bot.send_message(chat_id, f'Связь с хостом {i} пропала')  # Пишем в телегу
                     except:
                         print('Не удается отправить сообщение в Telegram')
+                        append_log(f'{datetime.now()}: Не удается отправить сообщение в Telegram',
+                                   config['other']['log_file'])
                     append_log(f'{datetime.now()}: Связь с хостом {i} пропала', config['other']['log_file'])  # Лог
     try:
         sleep(int(config['other']['delay']))  # Делаем паузу (в секундах, из конфига)

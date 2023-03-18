@@ -6,7 +6,7 @@ import configparser
 import os.path
 
 
-def append_log(text, filename):  # Пишем логи
+def append_log(text, filename):  # Функция для записи в лог-файл
     try:
         with open(filename, 'a+') as log1:  # Открываем файл, если его нет - создаем (нужны права на запись)
             log1.write(f'{text} \n')  # Добавляем строку с указанным текстом (передается во время входа в функцию)
@@ -22,20 +22,20 @@ else:
     print('Не обнаружен файл конфигурации')
     raise SystemExit  # Если нет - выводим ошибку и закрываем программу
 
-try:
+try:  # Инициализация
     config = configparser.ConfigParser()  # Парсим конфиг-файл
     config.read('config.cfg')  # Считываем конфиг-файл
     ips_cfg = config.defaults()  # Переносим список IP в словарь
     chat_id = config['tlgrm']['chat_id']  # Берем chat-id из конфиг-файла
     bot = telebot.TeleBot(config['tlgrm']['tlg_bot'])  # Идентификатор бота из конфига
-except:
+except:  # Если инициализация не прошла - выкидываем ошибку и закрываемся
     print('Невозможно прочитать файл конфигурации. Возможно нарушена структура.')
     raise SystemExit
 
 ips = {}  # Создаем пустой словарь
 for ip in ips_cfg:  # Добавляем в пустой словарь значения из конфига + состояние последнего опроса, во избежание флуда
-    addr = ips_cfg[ip].split('.')  # Валидация IP
-    for i in addr:
+    addr = ips_cfg[ip].split('.')
+    for i in addr:  # Валидация IP
         if int(i) < 0 or int(i) > 255:
             print('В списке для опроса указан неверный IP-адрес')
             raise SystemExit  # Если IP кривой - ошибка и закрываемся
@@ -60,16 +60,17 @@ while state:
                 if response3 is None or response3 is False:  # Если и в 3 раз не ответил:
                     ips[i][1] = 1  # Добавляем признак отвала хоста
                     try:
-                        if config['tlgrm']['enabled'] == '1':
+                        if config['tlgrm']['enabled'] == '1':  # Смотрит конфиг, включена ли отправка в телеграм
                             bot.send_message(chat_id, f'Связь с хостом {i} пропала')  # Пишем в телегу
-                    except:
+                    except:  # Если ошибка - пишем лог
                         print('Не удается отправить сообщение в Telegram')
                         append_log(f'{datetime.now()}: Не удается отправить сообщение в Telegram',
                                    config['other']['log_file'])
                     append_log(f'{datetime.now()}: Связь с хостом {i} пропала', config['other']['log_file'])  # Лог
     try:
         sleep(int(config['other']['delay']))  # Делаем паузу (в секундах, из конфига)
-    except ValueError:
+    except ValueError:  # Если в конфиге время задержки - не цифра - в лог и ошибку
         print('Указан некорректный параметр задержки между опросами в конфигурационном файле')
+        append_log(f'{datetime.now()}: Указан некорректный параметр задержки между опросами в конфигурационном '
+                   f'файле', config['other']['log_file'])
         raise SystemExit
-
